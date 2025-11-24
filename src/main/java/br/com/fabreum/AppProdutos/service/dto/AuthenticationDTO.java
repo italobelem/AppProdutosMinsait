@@ -1,2 +1,4 @@
-package br.com.fabreum.AppProdutos.service.dto;public class AuthenticationDTO {
+package br.com.fabreum.AppProdutos.service.dto;
+
+public record AuthenticationDTO(String login, String password) {
 }

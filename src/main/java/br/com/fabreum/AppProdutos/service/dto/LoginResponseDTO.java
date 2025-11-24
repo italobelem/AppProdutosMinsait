@@ -1,2 +1,4 @@
-package br.com.fabreum.AppProdutos.service.dto;public record LoginResponseDTO() {
+package br.com.fabreum.AppProdutos.service.dto;
+
+public record LoginResponseDTO(String token) {
 }

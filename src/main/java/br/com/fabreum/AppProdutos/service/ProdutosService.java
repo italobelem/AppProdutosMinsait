@@ -15,7 +15,7 @@ public class ProdutosService {
 
     private final ProdutosRepository produtosRepository;
 
-    public Optional<Produtos> atualizaProduto(Produtos produto) {
+    public Optional<Produtos> atualizaProduto(Long id, Produtos produto) {
         log.info("Atualizando produto: {}", produto);
         final var produtoExistente = produtosRepository.findById(produto.getId());
         produtoExistente.ifPresent(p -> {
