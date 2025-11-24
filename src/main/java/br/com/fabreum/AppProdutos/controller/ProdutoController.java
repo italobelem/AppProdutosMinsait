@@ -29,21 +29,7 @@ public class ProdutoController {
     private final ProdutosRepository produtosRepository;
     private final ProdutosService produtosService;
 
-    @GetMapping("/me")
-    public ResponseEntity<String> quemSouEu() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        return ResponseEntity.ok("Usuário: " + auth.getName() + " | Permissões: " + auth.getAuthorities());
-    }
 
-    @GetMapping("/meu-perfil-de-seguranca")
-    public ResponseEntity<String> debugSeguranca() {
-        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-
-        return ResponseEntity.ok(
-                "Usuário Logado: " + auth.getName() + "\n" +
-                        "Permissões Carregadas: " + auth.getAuthorities()
-        );
-    }
 
     @PostMapping("/criar")
     @PreAuthorize("hasRole('ADMIN') or hasRole('SELLER')")
