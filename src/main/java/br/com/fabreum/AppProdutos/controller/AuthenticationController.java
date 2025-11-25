@@ -1,68 +1,57 @@
 package br.com.fabreum.AppProdutos.controller;
 
-import br.com.fabreum.AppProdutos.model.Category;
-import br.com.fabreum.AppProdutos.repository.CategoryRepository;
-import br.com.fabreum.AppProdutos.service.CategoryService;
-import br.com.fabreum.AppProdutos.service.dto.CategoryDto;
-import lombok.RequiredArgsConstructor;
+
+import br.com.fabreum.AppProdutos.model.User;
+import br.com.fabreum.AppProdutos.repository.UserRepository;
+import br.com.fabreum.AppProdutos.service.TokenService;
+import br.com.fabreum.AppProdutos.service.dto.AuthenticationDto;
+import br.com.fabreum.AppProdutos.service.dto.LoginResponseDto;
+import br.com.fabreum.AppProdutos.service.dto.RegisterDto;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
-@RequestMapping("v1/categories")
-@RequiredArgsConstructor
-public class CategoryController {
+@RequestMapping("auth")
+public class AuthenticationController {
 
-    private final CategoryService service;
-    private final CategoryRepository repository; // Injetado para o método DTO
+    @Autowired
+    private AuthenticationManager authenticationManager;
+    @Autowired
+    private UserRepository repository;
+    @Autowired
+    private TokenService tokenService;
 
-    // Endpoint Padrão: Lista todas (Entidade Completa)
-    @GetMapping
-    public ResponseEntity<List<Category>> listarTodas() {
-        return ResponseEntity.ok(service.findAll());
+    @PostMapping("/login")
+    public ResponseEntity login(@RequestBody @Valid AuthenticationDto data){
+        var usernamePassword = new UsernamePasswordAuthenticationToken(data.login(), data.password());
+        var auth = authenticationManager.authenticate(usernamePassword);
+
+        var token = tokenService.generateToken((User) auth.getPrincipal());
+
+        return ResponseEntity.ok(new LoginResponseDto(token));
     }
 
-    // Endpoint Padrão: Busca por ID (Entidade Completa)
-    @GetMapping("/{id}")
-    public ResponseEntity<Category> buscarPorId(@PathVariable Long id) {
-        return service.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @PostMapping("/register")
+    public ResponseEntity register(@RequestBody @Valid RegisterDto data){
+        if(this.repository.findByLogin(data.login()) != null) return ResponseEntity.badRequest().build();
+
+        String encryptedPassword = new BCryptPasswordEncoder().encode(data.password());
+        User newUser = new User(data.login(), encryptedPassword, data.role());
+
+        this.repository.save(newUser);
+
+        return ResponseEntity.ok().build();
     }
 
-    // Endpoint Otimizado: Busca por ID retornando DTO (Seguindo padrão do ProdutoController)
-    @GetMapping("/dto/{id}")
-    public ResponseEntity<CategoryDto> buscarDtoPorId(@PathVariable Long id) {
-        CategoryDto dto = repository.findByIdDto(id);
-        if (dto != null) {
-            return ResponseEntity.ok(dto);
-        }
-        return ResponseEntity.notFound().build();
-    }
-
-    @PostMapping
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<Category> criar(@RequestBody Category category) {
-        Category nova = service.save(category);
-        return ResponseEntity.ok(nova);
-    }
-    @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<Category> atualizar(@PathVariable Long id, @RequestBody Category category) {
-        return service.update(id, category)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<Void> deletar(@PathVariable Long id) {
-        if (service.delete(id)) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+    @GetMapping("/me")
+    public ResponseEntity<String> quemSouEu() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        return ResponseEntity.ok("Usuário: " + auth.getName() + " | Permissões: " + auth.getAuthorities());
     }
 }
