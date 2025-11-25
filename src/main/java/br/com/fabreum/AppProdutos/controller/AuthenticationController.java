@@ -1,12 +1,12 @@
 package br.com.fabreum.AppProdutos.controller;
 
-
-import br.com.fabreum.AppProdutos.model.User;
-import br.com.fabreum.AppProdutos.repository.UserRepository;
-import br.com.fabreum.AppProdutos.service.TokenService;
 import br.com.fabreum.AppProdutos.service.dto.AuthenticationDto;
 import br.com.fabreum.AppProdutos.service.dto.LoginResponseDto;
 import br.com.fabreum.AppProdutos.service.dto.RegisterDto;
+import br.com.fabreum.AppProdutos.model.User;
+import br.com.fabreum.AppProdutos.repository.UserRepository;
+import br.com.fabreum.AppProdutos.service.TokenService;
+import br.com.fabreum.AppProdutos.service.dto.ApiResponseDto;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -28,25 +28,27 @@ public class AuthenticationController {
     private TokenService tokenService;
 
     @PostMapping("/login")
-    public ResponseEntity login(@RequestBody @Valid AuthenticationDto data){
+    public ResponseEntity<ApiResponseDto<LoginResponseDto>> login(@RequestBody @Valid AuthenticationDto data){
         var usernamePassword = new UsernamePasswordAuthenticationToken(data.login(), data.password());
         var auth = authenticationManager.authenticate(usernamePassword);
 
         var token = tokenService.generateToken((User) auth.getPrincipal());
 
-        return ResponseEntity.ok(new LoginResponseDto(token));
+        return ResponseEntity.ok(new ApiResponseDto<>("Login realizado com sucesso!", new LoginResponseDto(token)));
     }
 
     @PostMapping("/register")
-    public ResponseEntity register(@RequestBody @Valid RegisterDto data){
-        if(this.repository.findByLogin(data.login()) != null) return ResponseEntity.badRequest().build();
+    public ResponseEntity<ApiResponseDto<Void>> register(@RequestBody @Valid RegisterDto data){
+        if(this.repository.findByLogin(data.login()) != null) {
+            return ResponseEntity.badRequest().body(new ApiResponseDto<>("Este login já está em uso."));
+        }
 
         String encryptedPassword = new BCryptPasswordEncoder().encode(data.password());
         User newUser = new User(data.login(), encryptedPassword, data.role());
 
         this.repository.save(newUser);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(new ApiResponseDto<>("Usuário registrado com sucesso!"));
     }
 
     @GetMapping("/me")
@@ -54,4 +56,6 @@ public class AuthenticationController {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         return ResponseEntity.ok("Usuário: " + auth.getName() + " | Permissões: " + auth.getAuthorities());
     }
+
 }
+

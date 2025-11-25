@@ -1,6 +1,9 @@
 package br.com.fabreum.AppProdutos.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,8 +26,11 @@ public class Produtos {
     @Column(name = "codigo_barras")
     private String codigoBarras;
 
+    @NotBlank(message = "O nome do produto é obrigatório")
     private String nome;
 
+    @NotNull(message = "O preço é obrigatório")
+    @Positive(message = "O preço deve ser maior que zero")
     @Column(nullable = false)
     private BigDecimal preco;
 

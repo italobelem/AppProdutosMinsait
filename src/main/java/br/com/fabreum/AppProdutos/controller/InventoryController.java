@@ -2,6 +2,7 @@ package br.com.fabreum.AppProdutos.controller;
 
 import br.com.fabreum.AppProdutos.model.TransactionType;
 import br.com.fabreum.AppProdutos.service.InventoryService;
+import br.com.fabreum.AppProdutos.service.dto.ApiResponseDto;
 import br.com.fabreum.AppProdutos.service.dto.StockDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,20 +19,21 @@ public class InventoryController {
 
     @PostMapping("/add")
     @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_SELLER')")
-    public ResponseEntity<String> addStock(@RequestBody @Valid StockDto dto) {
+    public ResponseEntity<ApiResponseDto<Void>> addStock(@RequestBody @Valid StockDto dto) {
         service.processTransaction(dto.productId(), dto.quantity(), TransactionType.PURCHASE);
-        return ResponseEntity.ok("Estoque adicionado com sucesso.");
+        return ResponseEntity.ok(new ApiResponseDto<>("Estoque adicionado com sucesso."));
     }
 
     @PostMapping("/remove")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<String> removeStock(@RequestBody @Valid StockDto dto) {
+    public ResponseEntity<ApiResponseDto<Void>> removeStock(@RequestBody @Valid StockDto dto) {
         service.processTransaction(dto.productId(), -dto.quantity(), TransactionType.ADJUSTMENT);
-        return ResponseEntity.ok("Estoque removido com sucesso.");
+        return ResponseEntity.ok(new ApiResponseDto<>("Estoque removido (ajuste manual)."));
     }
 
     @GetMapping("/{productId}")
-    public ResponseEntity<Integer> getBalance(@PathVariable Long productId) {
-        return ResponseEntity.ok(service.getSaldoAtual(productId));
+    public ResponseEntity<ApiResponseDto<Integer>> getBalance(@PathVariable Long productId) {
+        Integer saldo = service.getSaldoAtual(productId);
+        return ResponseEntity.ok(new ApiResponseDto<>("Saldo atual consultado.", saldo));
     }
 }

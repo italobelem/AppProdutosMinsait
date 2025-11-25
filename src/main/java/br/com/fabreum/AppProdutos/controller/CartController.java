@@ -1,6 +1,7 @@
 package br.com.fabreum.AppProdutos.controller;
 
 import br.com.fabreum.AppProdutos.service.CartService;
+import br.com.fabreum.AppProdutos.service.dto.ApiResponseDto;
 import br.com.fabreum.AppProdutos.service.dto.CartItemDto;
 import br.com.fabreum.AppProdutos.service.dto.CartResponseDto;
 import br.com.fabreum.AppProdutos.service.dto.CartUpdateDto;
@@ -13,30 +14,30 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("v1/cart")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('CUSTOMER')")
+@PreAuthorize("hasAuthority('ROLE_CUSTOMER')")
 public class CartController {
 
     private final CartService service;
 
-    @GetMapping("/listar")
-    public ResponseEntity<CartResponseDto> getMyCart() {
-        return ResponseEntity.ok(service.getMyCart());
+    @GetMapping("/listarItens")
+    public ResponseEntity<ApiResponseDto<CartResponseDto>> getMyCart() {
+        return ResponseEntity.ok(new ApiResponseDto<>("Seu carrinho de compras.", service.getMyCart()));
     }
 
     @PostMapping("/add")
-    public ResponseEntity<CartResponseDto> addItem(@RequestBody @Valid CartItemDto dto) {
-        return ResponseEntity.ok(service.addItem(dto));
+    public ResponseEntity<ApiResponseDto<CartResponseDto>> addItem(@RequestBody @Valid CartItemDto dto) {
+        return ResponseEntity.ok(new ApiResponseDto<>("Item adicionado ao carrinho!", service.addItem(dto)));
     }
 
-    @PutMapping("/alterar/{itemId}")
-    public ResponseEntity<CartResponseDto> updateItem(
+    @PutMapping("atualizar/{itemId}")
+    public ResponseEntity<ApiResponseDto<CartResponseDto>> updateItem(
             @PathVariable Long itemId,
             @RequestBody @Valid CartUpdateDto dto) {
-        return ResponseEntity.ok(service.updateItemQuantity(itemId, dto.quantity()));
+        return ResponseEntity.ok(new ApiResponseDto<>("Quantidade atualizada.", service.updateItemQuantity(itemId, dto.quantity())));
     }
 
-    @DeleteMapping("/deletar/{itemId}")
-    public ResponseEntity<CartResponseDto> removeItem(@PathVariable Long itemId) {
-        return ResponseEntity.ok(service.removeItem(itemId));
+    @DeleteMapping("deletar/{itemId}")
+    public ResponseEntity<ApiResponseDto<CartResponseDto>> removeItem(@PathVariable Long itemId) {
+        return ResponseEntity.ok(new ApiResponseDto<>("Item removido do carrinho.", service.removeItem(itemId)));
     }
 }

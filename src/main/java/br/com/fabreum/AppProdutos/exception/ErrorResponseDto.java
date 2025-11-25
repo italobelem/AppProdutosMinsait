@@ -3,7 +3,7 @@ package br.com.fabreum.AppProdutos.exception;
 import java.time.Instant;
 import java.util.List;
 
-public record ErrorResponseDTO(
+public record ErrorResponseDto(
         Instant timestamp,
         Integer status,
         String error,

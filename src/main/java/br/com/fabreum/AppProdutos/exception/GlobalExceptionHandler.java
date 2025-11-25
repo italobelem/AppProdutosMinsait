@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -17,15 +18,15 @@ import java.util.List;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponseDTO> handleValidation(MethodArgumentNotValidException e, HttpServletRequest request) {
-        HttpStatus status = HttpStatus.BAD_REQUEST; // 400
-        List<ErrorResponseDTO.ValidationError> errors = new ArrayList<>();
+    public ResponseEntity<ErrorResponseDto> handleValidation(MethodArgumentNotValidException e, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        List<ErrorResponseDto.ValidationError> errors = new ArrayList<>();
 
         for (FieldError x : e.getBindingResult().getFieldErrors()) {
-            errors.add(new ErrorResponseDTO.ValidationError(x.getField(), x.getDefaultMessage()));
+            errors.add(new ErrorResponseDto.ValidationError(x.getField(), x.getDefaultMessage()));
         }
 
-        ErrorResponseDTO err = new ErrorResponseDTO(
+        ErrorResponseDto err = new ErrorResponseDto(
                 Instant.now(),
                 status.value(),
                 "Erro de Validação",
@@ -36,15 +37,45 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(err);
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponseDto> handleAccessDenied(AccessDeniedException e, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.FORBIDDEN;
+
+        ErrorResponseDto err = new ErrorResponseDto(
+                Instant.now(),
+                status.value(),
+                "Acesso Negado",
+                "Você não tem permissão para realizar esta operação (Requer privilégios elevados).",
+                request.getRequestURI(),
+                null
+        );
+        return ResponseEntity.status(status).body(err);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponseDto> handleBadCredentials(BadCredentialsException e, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.UNAUTHORIZED;
+
+        ErrorResponseDto err = new ErrorResponseDto(
+                Instant.now(),
+                status.value(),
+                "Não Autorizado",
+                "Erro de Autenticação: Usuário ou senha inválidos.",
+                request.getRequestURI(),
+                null
+        );
+        return ResponseEntity.status(status).body(err);
+    }
+
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ErrorResponseDTO> handleBusinessRule(RuntimeException e, HttpServletRequest request) {
-        if (e instanceof AccessDeniedException) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    public ResponseEntity<ErrorResponseDto> handleBusinessRule(RuntimeException e, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+
+        if (e.getMessage().toLowerCase().contains("não encontrado")) {
+            status = HttpStatus.NOT_FOUND;
         }
 
-        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
-
-        ErrorResponseDTO err = new ErrorResponseDTO(
+        ErrorResponseDto err = new ErrorResponseDto(
                 Instant.now(),
                 status.value(),
                 "Erro no Processamento",
