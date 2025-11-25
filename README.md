@@ -1,367 +1,137 @@
-# ✅ **Sugestões de Evolução — Regras de Negócio e Melhorias (para os alunos)**
+🛒 AppProdutos - API de E-commerce
 
-Este projeto foi criado como introdução ao Java e pode ser ampliado com novas regras de negócio, entidades, validações e funcionalidades.
-As sugestões abaixo servem como **exercícios guiados** para aprimorar o domínio de API REST, Java, Spring Boot, autenticação, modelagem de dados e boas práticas.
+API RESTful para gestão de e-commerce. O sistema gerencia desde o cadastro de produtos e controle transacional de estoque até o fluxo completo de carrinho de compras e checkout, com segurança via JWT e documentação interativa.
 
-As funcionalidades estão organizadas por prioridade e dificuldade.
+🚀 Tecnologias & Ferramentas
 
----
+    Linguagem: Java 21
 
-## ✅ 1. Autenticação e Autorização
+    Framework: Spring Boot 3.3
 
-**Prioridade:** Alta
-**Dificuldade:** Média
+    Segurança: Spring Security + JWT (Auth0)
 
-Use o repositório `Login-BE` como referência para implementar autenticação via JWT e controle de acesso.
+    Banco de Dados: H2 (In-memory) para desenvolvimento / PostgreSQL ready.
 
-### Requisitos:
+    Versionamento de Banco: Flyway Migrations
 
-* Implementar login e obtenção de token (JWT).
-* Criar papéis (roles):
+    Documentação: SpringDoc OpenAPI (Swagger UI)
 
-  * `ADMIN` – pode criar/editar/deletar produtos, categorias e promoções.
-  * `SELLER` – pode cadastrar/editar produtos próprios.
-  * `CUSTOMER` – pode visualizar catálogo, criar carrinho e pedidos.
-* Proteger endpoints sensíveis com `@PreAuthorize`.
+    Testes: JUnit 5 & Mockito
 
-### Endpoints sugeridos:
+    Mapeamento: JPA / Hibernate
 
-```
-POST /auth/login  
-POST /auth/refresh  
-GET  /auth/me
-```
+    Outros: Lombok, Bean Validation, Maven.
 
----
+⚙️ Arquitetura & Funcionalidades
 
-## ✅ 2. Categorias e Organização do Catálogo
+O projeto segue uma arquitetura em camadas (Controller, Service, Repository) com uso intensivo de DTOs (Records) para entrada e saída de dados, garantindo desacoplamento da camada de persistência.
 
-**Prioridade:** Alta
-**Dificuldade:** Baixa
+🔐 1. Segurança e Controle de Acesso (RBAC)
 
-### Regras:
+Autenticação Stateless via Token JWT. O sistema possui três perfis de acesso:
 
-* Todo produto deve pertencer a uma categoria.
-* Categorias podem ter hierarquia (pai → filho).
-* Nome de categoria deve ser único no mesmo nível.
+    ADMIN: Acesso total (Gestão de catálogo, usuários e ajustes de estoque).
 
-### Endpoints sugeridos:
+    SELLER: Gestão de produtos e reposição de estoque.
 
-```
-GET    /categories
-POST   /categories
-PUT    /categories/{id}
-DELETE /categories/{id}
-```
+    CUSTOMER: Experiência de compra (Carrinho, Pedidos e Histórico).
 
-### Validações:
+📦 2. Catálogo e Estoque Transacional
 
-* Nome obrigatório.
-* Proibir duplicidade.
+    CRUD completo de Produtos e Categorias.
 
----
+    Auditoria de Estoque: Nenhuma quantidade é alterada diretamente. Tudo é feito via Transações (Entrada, Venda, Ajuste, Devolução/Estorno), permitindo rastreabilidade total.
 
-## ✅ 3. Controle de Estoque (Inventário)
+    Bloqueio de venda sem saldo.
 
-**Prioridade:** Alta
-**Dificuldade:** Média
+🛒 3. Carrinho de Compras Inteligente
 
-### Regras:
+    Carrinho persistente por usuário.
 
-* Cada ajuste de estoque gera um registro de `InventoryTransaction`.
-* A venda/pedido deve diminuir o estoque.
-* Impedir vendas com estoque insuficiente.
-* Notificar quando um produto atingir estoque mínimo (pode ser apenas flag).
+    Price Snapshot: O sistema congela o preço do produto no momento da adição ao carrinho. Se o preço da loja mudar depois, o cliente paga o preço acordado na adição.
 
-### Tipos de transação:
+💳 4. Checkout e Pedidos
 
-* Entrada (compra/fornecedor)
-* Saída (venda)
-* Ajuste
-* Devolução
+    Transformação de Carrinho em Pedido.
 
-### Endpoints sugeridos:
+    Baixa automática de estoque no momento da venda.
 
-```
-POST /inventory/{productId}/add
-POST /inventory/{productId}/remove
-GET  /inventory/{productId}
-```
+    Cancelamento com Estorno: Se um pedido é cancelado, os itens retornam automaticamente para o estoque disponível.
 
----
+🛡️ 5. Tratamento de Erros Global
 
-## ✅ 4. Carrinho de Compras
+    Respostas de erro padronizadas (ErrorResponseDto) para exceções de negócio e validações (@Valid), evitando que o cliente receba "stack traces" genéricas.
 
-**Prioridade:** Alta
-**Dificuldade:** Média
+    Envelopamento de respostas de sucesso (ApiResponseDto) para feedback claro.
 
-### Regras:
+🏗️ Estrutura do Banco de Dados (Migrations)
 
-* Usuário autenticado pode ter apenas 1 carrinho ativo.
-* Itens têm `priceSnapshot` (preço do momento).
-* Atualizações recalculam totais.
+O banco é gerenciado pelo Flyway, garantindo integridade e versionamento do schema.
+Versão	Descrição
+V1	Tabelas iniciais (Users, Produtos, Estoque Simples)
+V2	Tabela de Categorias e relacionamentos
+V3	Tabela de Transações de Estoque (Histórico)
+V4	Tabelas de Carrinho e Itens do Carrinho
+V5	Tabelas de Pedidos e Itens do Pedido
 
-### Endpoints sugeridos:
+▶️ Como Rodar o Projeto
 
-```
-GET  /cart
-POST /cart/items
-PUT  /cart/items/{itemId}
-DELETE /cart/items/{itemId}
-```
+Pré-requisitos
 
----
+    JDK 21 instalado.
 
-## ✅ 5. Pedidos (Orders)
+    Maven instalado.
 
-**Prioridade:** Alta
-**Dificuldade:** Média
+Passo a Passo
 
-### Regras:
+    Clone o repositório:
+    Bash
 
-* Carrinho → Pedido (checkout).
-* Status do pedido:
+git clone https://github.com/seu-usuario/AppProdutos.git
+cd AppProdutos
 
-  * `CREATED`
-  * `PAID`
-  * `SHIPPED`
-  * `DELIVERED`
-  * `CANCELLED`
-* Cancelamento permitido somente em `CREATED` ou `PAID`.
+Compile e Execute:
+Bash
 
-### Endpoints sugeridos:
+    mvn spring-boot:run
 
-```
-POST /orders
-GET  /orders/{id}
-POST /orders/{id}/cancel
-```
+    Acesse a Documentação Interativa: O projeto subirá na porta 8080. Acesse o Swagger para testar os endpoints: 👉 http://localhost:8080/swagger-ui.html
 
----
+🧪 Guia de Testes (Postman / Swagger)
 
-## ✅ 6. Promoções e Cupons
+Como o projeto utiliza banco H2 em memória, os dados são resetados a cada reinício. Siga este fluxo para popular e testar a API:
 
-**Prioridade:** Média
-**Dificuldade:** Média
+    Criar Administrador:
 
-### Tipos:
+        POST /auth/register → {"login": "admin@loja.com", "password": "123", "role": "ADMIN"}
 
-* Desconto percentual (%)
-* Desconto fixo (R$)
-* Promoção por categoria ou produto
-* Cupom válido por período
-* Cupom com limite de uso
+    Login (Obter Token):
 
-### Validações:
+        POST /auth/login → Copie o token gerado.
 
-* Cupom expirado → rejeitar
-* Cupom já utilizado pelo usuário → rejeitar
-* Cupom sem relação com produtos do carrinho → rejeitar
+        No Swagger, clique no cadeado "Authorize" e insira o token.
 
-### Endpoints:
+    Criar Dados Base (Como Admin):
 
-```
-POST /promotions
-POST /coupons/apply
-```
+        POST /v1/categories → Crie uma categoria.
 
----
+        POST /v1/produtos/criar → Crie um produto vinculado à categoria.
 
-## ✅ 7. Reviews e Avaliações
+        POST /v1/inventory/add → Adicione saldo ao produto.
 
-**Prioridade:** Baixa
-**Dificuldade:** Baixa
+    Simular Compra (Como Cliente):
 
-### Regras:
+        Registre e logue um usuário com role CUSTOMER.
 
-* Apenas quem comprou pode avaliar.
-* Limite de 1 avaliação por produto por pedido.
-* Recalcular média a cada novo review.
+        POST /v1/cart/add → Adicione itens.
 
-### Endpoints:
+        POST /v1/orders/checkout → Finalize o pedido.
 
-```
-POST /reviews
-GET  /reviews/product/{productId}
-```
+✅ Testes Unitários
 
----
+O projeto possui cobertura de testes unitários para as regras de negócio críticas (Cálculo de Checkout, Estorno de Estoque, Validações de Saldo).
 
-## ✅ 8. Auditoria (Audit Log)
+Para rodar os testes:
+Bash
 
-**Prioridade:** Média
-**Dificuldade:** Baixa
-
-### Regras:
-
-* Registrar:
-
-  * quem criou/alterou/deletou
-  * data e hora
-  * antes e depois da alteração (JSON)
-* Auditoria deve ser imutável.
-
-### Endpoints:
-
-```
-GET /audit?entity=Product
-```
-
----
-
-## ✅ 9. Relatórios e Métricas
-
-**Prioridade:** Baixa
-**Dificuldade:** Média
-
-### Exemplos:
-
-* Produtos mais vendidos.
-* Faturamento por período.
-* Produtos com estoque baixo.
-* Promoções mais utilizadas.
-
-### Endpoints:
-
-```
-GET /reports/sales
-GET /reports/top-products
-GET /reports/low-stock
-```
-
----
-
-# ✅ 10. Novas Entidades Sugeridas
-
-```text
-Product
-- id
-- name
-- description
-- sku
-- price
-- costPrice
-- categoryId
-- stockQuantity
-- active
-- createdAt
-- updatedAt
-
-Category
-- id
-- name
-- parentId
-- createdAt
-- updatedAt
-
-InventoryTransaction
-- id
-- productId
-- delta
-- reason
-- referenceId
-- createdBy
-- createdAt
-
-Cart
-- id
-- userId
-- status
-
-CartItem
-- id
-- cartId
-- productId
-- quantity
-- priceSnapshot
-
-Order
-- id
-- userId
-- total
-- discount
-- freight
-- status
-- createdAt
-- address
-
-OrderItem
-- id
-- orderId
-- productId
-- quantity
-- priceSnapshot
-
-Promotion
-- id
-- code
-- type
-- value
-- validFrom
-- validTo
-- usageLimit
-- usedCount
-- applicableTo
-
-Review
-- id
-- productId
-- userId
-- rating
-- comment
-- createdAt
-
-AuditLog
-- id
-- entityType
-- entityId
-- action
-- beforeJson
-- afterJson
-- who
-- when
-```
-
----
-
-# ✅ 11. Tarefas / Exercícios Práticos para os Alunos
-
-## 🟦 **Básico (1–2 horas)**
-
-* Criar entidade Categoria.
-* Associar Produto → Categoria.
-* Implementar busca de produtos por nome/categoria.
-* Validar dados básicos (preço > 0, nome obrigatório).
-
-## 🟩 **Intermediário (4–8 horas)**
-
-* Implementar autenticação (baseado no Login-BE).
-* Criar carrinho de compras.
-* Controlar estoque com `InventoryTransaction`.
-
-## 🟧 **Avançado (8–20 horas)**
-
-* Finalizar fluxo completo de pedidos.
-* Criar sistema de cupons e promoções.
-* Implementar reviews vinculados ao pedido.
-* Criar testes unitários e de integração.
-
-## 🟥 **Desafios bônus**
-
-* Multi-seller (cada vendedor gerencia seus produtos).
-* Notificações (e-mail ou webhook) ao mudar status do pedido.
-* Agendamento (Scheduler) para alertas de estoque baixo.
-* Implementar caching (Redis) para catálogo.
-
----
-
-# ✅ 12. Critérios de Aceite
-
-* Endpoints documentados (OpenAPI/Swagger ou README).
-* Todas as validações retornam mensagens claras.
-* Rejeitar operações inconsistentes (ex.: vender sem estoque).
-* Testes unitários cobrindo regras principais.
-* Endpoints sensíveis protegidos com roles.
-* Tabelas criadas com migrations (Flyway/Liquibase).
-* Código organizado, coeso e seguindo boas práticas.
-Só pedir!
+mvn test
