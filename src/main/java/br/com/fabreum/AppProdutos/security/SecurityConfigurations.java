@@ -29,19 +29,12 @@ public class SecurityConfigurations {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        // 1. ÁREA PÚBLICA (Login, Registro, Swagger, H2)
                         .requestMatchers(HttpMethod.POST, "/auth/**").permitAll()
+                        .requestMatchers("/error").permitAll()
                         .requestMatchers("/h2-console/**", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
 
-                        // 2. VITRINE (Opcional - se quiser liberar listagem para todos)
                         .requestMatchers(HttpMethod.GET, "/v1/produtos/**").permitAll()
 
-                        // 3. LIMPEZA TOTAL DE REGRAS ESPECÍFICAS
-                        // Removemos qualquer linha que tenha .hasRole(...) aqui dentro.
-                        // O controle fino agora será exclusividade do @PreAuthorize no Controller.
-
-                        // 4. REGRA DE OURO: Qualquer outra rota exige apenas estar LOGADO.
-                        // Se o token for válido, a requisição passa e o @PreAuthorize decide se pode ou não.
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
