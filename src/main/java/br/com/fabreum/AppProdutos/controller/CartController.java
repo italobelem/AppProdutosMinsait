@@ -28,7 +28,6 @@ public class CartController {
         return ResponseEntity.ok(service.addItem(dto));
     }
 
-    // ATUALIZAR QUANTIDADE
     @PutMapping("/alterar/{itemId}")
     public ResponseEntity<CartResponseDto> updateItem(
             @PathVariable Long itemId,
@@ -36,7 +35,6 @@ public class CartController {
         return ResponseEntity.ok(service.updateItemQuantity(itemId, dto.quantity()));
     }
 
-    // REMOVER ITEM
     @DeleteMapping("/deletar/{itemId}")
     public ResponseEntity<CartResponseDto> removeItem(@PathVariable Long itemId) {
         return ResponseEntity.ok(service.removeItem(itemId));
