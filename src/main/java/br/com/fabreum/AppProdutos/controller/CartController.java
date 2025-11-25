@@ -18,7 +18,7 @@ public class CartController {
 
     private final CartService service;
 
-    @GetMapping
+    @GetMapping("/listar")
     public ResponseEntity<CartResponseDto> getMyCart() {
         return ResponseEntity.ok(service.getMyCart());
     }
