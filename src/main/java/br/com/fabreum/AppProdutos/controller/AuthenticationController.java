@@ -7,6 +7,10 @@ import br.com.fabreum.AppProdutos.model.User;
 import br.com.fabreum.AppProdutos.repository.UserRepository;
 import br.com.fabreum.AppProdutos.service.TokenService;
 import br.com.fabreum.AppProdutos.service.dto.ApiResponseDto;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("auth")
+@Tag(name = "Autenticação", description = "Endpoints para registro e login de usuários")
 public class AuthenticationController {
 
     @Autowired
@@ -27,6 +32,11 @@ public class AuthenticationController {
     @Autowired
     private TokenService tokenService;
 
+    @Operation(summary = "Realizar Login", description = "Autentica o usuário e retorna um Token JWT.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Login realizado com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Credenciais inválidas")
+    })
     @PostMapping("/login")
     public ResponseEntity<ApiResponseDto<LoginResponseDto>> login(@RequestBody @Valid AuthenticationDto data){
         var usernamePassword = new UsernamePasswordAuthenticationToken(data.login(), data.password());
@@ -37,6 +47,11 @@ public class AuthenticationController {
         return ResponseEntity.ok(new ApiResponseDto<>("Login realizado com sucesso!", new LoginResponseDto(token)));
     }
 
+    @Operation(summary = "Registrar Novo Usuário", description = "Cria uma nova conta de usuário (ADMIN, SELLER ou CUSTOMER).")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Usuário registrado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Usuário já existe ou dados inválidos")
+    })
     @PostMapping("/register")
     public ResponseEntity<ApiResponseDto<Void>> register(@RequestBody @Valid RegisterDto data){
         if(this.repository.findByLogin(data.login()) != null) {
@@ -51,11 +66,10 @@ public class AuthenticationController {
         return ResponseEntity.ok(new ApiResponseDto<>("Usuário registrado com sucesso!"));
     }
 
+    @Operation(summary = "Dados do Usuário Atual", description = "Retorna informações do usuário logado baseado no Token enviado.")
     @GetMapping("/me")
     public ResponseEntity<String> quemSouEu() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         return ResponseEntity.ok("Usuário: " + auth.getName() + " | Permissões: " + auth.getAuthorities());
     }
-
 }
-

@@ -52,7 +52,7 @@ public class CartService {
             newItem.setCart(cart);
             newItem.setProduto(produto);
             newItem.setQuantity(dto.quantity());
-            newItem.setPriceSnapshot(produto.getPreco()); // <--- AQUI ESTÁ A REGRA DE OURO
+            newItem.setPriceSnapshot(produto.getPreco());
 
             cart.getItems().add(newItem);
         }
